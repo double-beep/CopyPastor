@@ -32,7 +32,18 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 <script src="{{ url_for('static', filename='diff.js') }}"></script>
 <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+<script src="{{ url_for('static', filename='flag_helper.js') }}"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/js/bootstrap.min.js"></script>
 <script type="text/javascript">function o(l1,l2){window.open(l1);window.open(l2)}; disp(`{{f_body_one|safe}}`,`{{f_body_two|safe}}`); disp_sbs(`{{f_body_one|safe}}`,`{{f_body_two|safe}}`); $('#double').hide(); $('#old').hide();</script>
+{% if request.path == "/" %}
+    <script type="text/javascript">
+        if (window.location.href.match('access_token')) {
+            localStorage.setItem('access_token', new URL(window.location.href).searchParams.get('access_token'));
+            document.querySelector('#token-alert').classList.add('show');
+        } else {
+            document.querySelector('#token-alert').remove();
+        }
+    </script>
+{% endif %}
 </body>
 </html>

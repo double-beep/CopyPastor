@@ -1,14 +1,18 @@
 import hmac
 import os
+import json
+import requests
 import sqlite3
 import subprocess
 import sys
 from datetime import datetime
 from html import unescape
-from flask import Flask, render_template, request, jsonify, g, redirect, url_for
+from flask import config, Flask, render_template, request, jsonify, g, redirect, url_for
+from stackapi import StackAPI, StackAPIError
 
 app = Flask(__name__)
 DATABASE = 'copypastorDB.db'
+app.config.from_pyfile('config.py')
 
 
 @app.errorhandler(404)
@@ -236,6 +240,61 @@ def get_feedback_stats():
     tp_feedback, fp_feedback, conf_feedback, none_feedback = get_feedback_counts()
     return jsonify({"status": "success", "none": none_feedback, "tp": tp_feedback, "fp": fp_feedback,
                     "conf": conf_feedback})
+
+
+@app.route("/answers/<int:answer_id>/flag_options", methods=['GET'])
+def get_option_id_for_post(answer_id):
+    access_token = request.args.get('access_token')
+    if access_token is None:
+        return jsonify({"status": "failure", "message": "Missing argument - access_token"}), 400
+    try:
+        SITE = StackAPI('stackoverflow', key=app.config['API_KEY'], access_token=access_token)
+        answer_flag_options = SITE.fetch('answers/' + str(answer_id) + '/flags/options')
+    except StackAPIError as api_error:
+        return jsonify({"error_url": api_error.url, "error_code": api_error.code,
+                        "error": api_error.error, "error_message": api_error.message}), 400
+    return jsonify(answer_flag_options)
+
+
+@app.route("/answers/<int:answer_id>/flag", methods=['POST'])
+def flag_answer(answer_id):
+    try:
+        access_token = request.form['access_token']
+        option_id = request.form['option_id']
+        modflag_comment = request.form['comment']
+        SITE = StackAPI('stackoverflow', key=app.config['API_KEY'], access_token=access_token)
+        flag = SITE.send_data(f'answers/{answer_id}/flags/add', option_id=option_id, comment=modflag_comment)
+    except KeyError as error:
+        return jsonify({"status": "failure", "message":
+                        "Error - Missing argument {}".format(error.args[0])}), 400
+    except StackAPIError as api_error:
+        return jsonify({"error_url": api_error.url, "error_code": api_error.code,
+                        "error": api_error.error, "error_message": api_error.message}), 400
+    return jsonify({"status": "success", "flag": flag})
+
+
+@app.route("/authorization/redirect", methods=['GET'])
+def redirect_to_se_oauth():
+    client_id = app.config['CLIENT_ID']
+    token_scope = 'no_expiry,write_access'
+    redirect_uri = request.host_url + 'authorization/target'
+    se_oauth_url = f"https://stackexchange.com/oauth?client_id={client_id}&redirect_uri={redirect_uri}&scope={token_scope}"
+    return redirect(se_oauth_url)
+
+
+@app.route("/authorization/target", methods=['GET'])
+def get_access_token():
+    code = request.args.get('code')
+    if code is None:
+        return jsonify({"status": "failure", "message": "Missing argument - code"}), 400
+    client_id = app.config['CLIENT_ID']
+    client_secret = app.config['CLIENT_SECRET']
+    redirect_uri = request.host_url + 'authorization/target'
+    token_request = requests.post('https://stackexchange.com/oauth/access_token',
+                                  data = {'client_id': client_id, 'code': code,
+                                          'client_secret': client_secret, 'redirect_uri': redirect_uri })
+    access_token = str(token_request.text).split('=')[1]
+    return redirect(url_for('display_posts', access_token=access_token))
 
 
 def get_escaped_body(body):

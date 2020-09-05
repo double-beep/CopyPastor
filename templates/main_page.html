@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container">
+
+    <div class="alert alert-success alert-dismissible fade" id="token-alert" role="alert">
+        Your access token has been successfully saved! You can close this window!
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+    </div>
+
     <p>
         CopyPastor is a Flask application to serve as a web dashboard for the
         <a href="https://stackapps.com/questions/7197/guttenberg-a-bot-searching-for-plagiarism-on-stack-overflow">

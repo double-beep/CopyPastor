@@ -20,6 +20,40 @@
         </span>
     </div>
 
+    <div class="container p-0">
+        <button type="button" class="btn btn-link" id="flagButton" data-toggle="modal" data-target="#flagModal">Flag this report for moderator attention</button>
+        <div class="modal fade" id="flagModal" tabindex="-1" role="dialog" aria-labelledby="modFlagDesc" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modFlagDesc">Flag the newest report for moderator attention</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <div class="form-group">
+                                <label for="mod-flag-text" class="col-form-label">Text to include in the flag:</label>
+                                <textarea class="form-control" id="mod-flag-text" rows=6>
+                                    {% if type == 'Plagiarized' %}
+                                        The answer is a repost of their other answer https:{{url_two}}, but as there are slight differences as seen here {{request.url}}, an auto flag wouldn't be raised.
+                                    {% else %}
+                                        Possible plagiarism of another answer: https:{{url_two}}, as can be seen here {{request.url}}
+                                    {% endif %}
+                                </textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="modflag-button">Flag</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="row">
             <div class="col">
